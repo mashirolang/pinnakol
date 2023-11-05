@@ -101,6 +101,7 @@ const getClassLists = async (token) => {
     .get();
 
   console.log(items);
+  return items
 };
 
 const checkToken = async (token) => {
@@ -193,4 +194,111 @@ const getClassDetails = async (token, code) => {
     .get();
 
   console.log(assignments, quizzes, onlineClass, posts);
+  return { assignments, quizzes, onlineClass, posts }
 };
+
+const getClassLibraries = async (token, code) => {
+  const CSRFToken = await getCSRFToken(token) // Found in meta element
+  const headers = {
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Cache-Control": "max-age=0",
+    Cookie: `XSRF-TOKEN=${token[0]}; pinnacle_session=${token[1]}`,
+  };
+
+  const postData = { 
+    _token: CSRFToken,
+    key: code
+  }
+
+  const url = `https://pinnacle.pnc.edu.ph/student/library/class`
+  const data = await axios({
+    method: "post",
+    url: url,
+    data: postData,
+    headers: headers
+  })
+  .then((res) => res.data)
+  .catch(err => console.log(err))
+  
+  const $ = cheerio.load(data)
+
+  const documents = $("#nav-docs a")
+  .map((index, element) => {
+    const $element = $(element)
+    return {
+      title: $element.text().trim(),
+      href: $element.attr("href")
+    }
+  })
+  .get()
+  
+  const images = $("#nav-images a")
+  .map((index, element) => {
+    const $element = $(element)
+    return {
+      href: $element.attr("href")
+    }
+  })
+  .get()
+
+  const videos = $("#nav-videos > div")
+  .map((index, element) => {
+    const $element = $(element)
+    return {
+      title: $element.find('h6').text().trim(),
+      href: $element.find('iframe').attr('src') || $element.find('iframe').attr('href')
+    }
+  })
+  .get()
+    
+  return { documents, images, videos }
+}
+
+const getCSRFToken = async (token) => {
+  const json = await fs.readFile('token.json', 'utf-8')
+  let csrfToken = JSON.parse(json).csrfToken
+
+  if(csrfToken) return csrfToken
+
+  const headers = {
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Cache-Control": "max-age=0",
+    Cookie: `XSRF-TOKEN=${token[0]}; pinnacle_session=${token[1]}`,
+  };
+
+  const url = `https://pinnacle.pnc.edu.ph/student/library`;
+
+  const data = await axios(url, {
+    headers,
+  }).then((res) => res.data)
+
+  const $ = cheerio.load(data)
+
+  const metaToken = $('meta[name="csrf-token"]').attr('content')
+
+  await fs.writeFile(
+    "token.json",
+    JSON.stringify(
+      { token: token , csrfToken: metaToken },
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  return metaToken
+}
+
+module.exports = {
+getToken,
+getClassLists,
+getClassDetails,
+getClassLibraries
+}
+
