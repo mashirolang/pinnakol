@@ -8,7 +8,7 @@ const getToken = async (username, password) => {
   const token = JSON.parse(json).token;
 
   if (!checkToken(token)) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch();
     try {
       const page = await browser.newPage();
 
@@ -159,5 +159,38 @@ const getClassDetails = async (token, code) => {
     })
     .get();
 
-  console.log(assignments);
+  const quizzes = $("#nav-quiz a")
+    .map((index, element) => {
+      const $element = $(element);
+      return {
+        title: $element.find("h5").text().trim(),
+        due: $element.find("h6").text().trim(),
+        posted: $element.find("small").text().trim(),
+      };
+    })
+    .get();
+
+  const onlineClass = $("#nav-ocs a")
+    .map((index, element) => {
+      const $element = $(element);
+      return {
+        title: $element.find("h5").text().trim(),
+        due: $element.find("h6").text().trim(),
+        posted: $element.find("small").text().trim(),
+      };
+    })
+    .get();
+
+  const posts = $("#nav-wall a")
+    .map((index, element) => {
+      const $element = $(element);
+      return {
+        title: $element.find("h5").text().trim(),
+        type: $element.find("span").text().trim(),
+        posted: $element.find("small").text().trim(),
+      };
+    })
+    .get();
+
+  console.log(assignments, quizzes, onlineClass, posts);
 };
