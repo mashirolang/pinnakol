@@ -3,7 +3,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs").promises;
 
-const getToken = async () => {
+const getToken = async (username, password) => {
   const json = await fs.readFile("token.json", "utf8");
   const token = JSON.parse(json).token;
 
@@ -16,22 +16,22 @@ const getToken = async () => {
       await page.goto("https://pinnacle.pnc.edu.ph/student/login");
 
       await page.evaluate(() => {
-        const username = document.querySelector(
+        const usernameDoc = document.querySelector(
           "body > div.auth-wrapper > div > div > div.col-xl-4.col-lg-6.col-md-7.p-0.my-auto.d-md-block.d-none > div > form > div:nth-child(2) > input"
         );
 
-        const password = document.querySelector(
+        const passwordDoc = document.querySelector(
           "body > div.auth-wrapper > div > div > div.col-xl-4.col-lg-6.col-md-7.p-0.my-auto.d-md-block.d-none > div > form > div:nth-child(3) > input"
         );
 
-        const button = document.querySelector(
+        const buttonDoc = document.querySelector(
           "body > div.auth-wrapper > div > div > div.col-xl-4.col-lg-6.col-md-7.p-0.my-auto.d-md-block.d-none > div > form > div.sign-btn.text-center > button"
         );
 
-        username.value = 2302512;
-        password.value = "Marky9999$";
+        usernameDoc.value = username;
+        passwordDoc.value = password;
 
-        button.click();
+        buttonDoc.click();
       });
 
       await page.waitForNavigation();
@@ -161,5 +161,3 @@ const getClassDetails = async (token, code) => {
 
   console.log(assignments);
 };
-
-getToken().then((token) => getClassLists(token));
